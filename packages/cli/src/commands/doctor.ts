@@ -1,4 +1,4 @@
-import { createLogger } from '@shengan/easy-code-core'
+import { createLogger } from '@shenganlee/easy-code-core'
 import pc from 'picocolors'
 import { loadEasyCodeConfig } from '../config.js'
 

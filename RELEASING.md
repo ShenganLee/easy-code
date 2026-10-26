@@ -4,16 +4,16 @@ Releases use Changesets v3 for versioning and changelogs, and npm trusted publis
 
 Tag forms:
 
-- `v<version>` publishes the fixed core group: `@shengan/easy-code-core` and `@shengan/easy-code-cli`.
+- `v<version>` publishes the fixed core group: `@shenganlee/easy-code-core` and `@shenganlee/easy-code-cli`.
 - `<dir>-v<version>` publishes only `packages/<dir>`, for example `kit-v0.3.0` or `plugin-foo-v0.1.0`.
 
 See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 
 ## One-time setup
 
-1. Confirm the npm org `@shengan` is writable and the package names are available:
-   - `@shengan/easy-code-core`
-   - `@shengan/easy-code-cli`
+1. Confirm the npm org `@shenganlee` is writable and the package names are available:
+   - `@shenganlee/easy-code-core`
+   - `@shenganlee/easy-code-cli`
 2. Log in locally. No project `.npmrc` is committed; `npm login` writes the account token to `~/.npmrc`. If your global registry is a mirror, also set the scoped registry in `~/.npmrc`:
 
    ```bash
@@ -24,7 +24,7 @@ See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 
    ```ini
    # ~/.npmrc
-   @shengan:registry=https://registry.npmjs.org/
+   @shenganlee:registry=https://registry.npmjs.org/
    ```
 
    To use a token instead of interactive login, put it in your user-level `~/.npmrc`, never in the repository:
@@ -121,6 +121,6 @@ Run `pnpm changeset pre exit` when the prerelease is done. Keep `latest` on a st
 
 - Re-run the tag workflow. Already published versions are skipped; an existing GitHub Release is left alone.
 - If a release is broken, deprecate the version and publish a patch. Do not reuse the tag.
-- Deprecate a bad version: `npm deprecate @shengan/easy-code-core@<version> "reason"`.
-- Move `latest` back: `npm dist-tag add @shengan/easy-code-core@<good-version> latest`.
+- Deprecate a bad version: `npm deprecate @shenganlee/easy-code-core@<version> "reason"`.
+- Move `latest` back: `npm dist-tag add @shenganlee/easy-code-core@<good-version> latest`.
 - OIDC does not support unpublishing. Prefer deprecation plus a patch release.

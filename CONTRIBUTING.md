@@ -35,8 +35,8 @@ pnpm check
 
 ## Package boundaries
 
-- `@shengan/easy-code-core` stays platform-neutral: no `node:*`, `process`, `Buffer`, `fs`, or `child_process`.
-- `@shengan/easy-code-cli` owns Node-specific behavior.
+- `@shenganlee/easy-code-core` stays platform-neutral: no `node:*`, `process`, `Buffer`, `fs`, or `child_process`.
+- `@shenganlee/easy-code-cli` owns Node-specific behavior.
 - Public API is the package `exports` map. Do not rely on deep imports into `dist`.
 - Do not add runtime TypeScript path aliases or `#imports`; use relative imports with `.js` extensions and `workspace:^` dependencies.
 

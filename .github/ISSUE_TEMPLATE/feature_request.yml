@@ -24,6 +24,6 @@ body:
     id: scope
     attributes:
       label: Which package?
-      options: ["@shengan/easy-code-core", "@shengan/easy-code-cli", "Not sure"]
+      options: ["@shenganlee/easy-code-core", "@shenganlee/easy-code-cli", "Not sure"]
     validations:
       required: true

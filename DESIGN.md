@@ -16,7 +16,7 @@
 
 | #   | 决策                                            | 说明                                                                                                                                                                                              |
 | --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 01  | **先发两个包，不做五包骨架**                    | v0 只发布 `@shengan/easy-code-core` 与 `@shengan/easy-code-cli`。`kit` 在第二个消费者出现时再拆，`plugin-*` 留到 Phase 2。架构预留位置，但不提前支付维护成本。                                    |
+| 01  | **先发两个包，不做五包骨架**                    | v0 只发布 `@shenganlee/easy-code-core` 与 `@shenganlee/easy-code-cli`。`kit` 在第二个消费者出现时再拆，`plugin-*` 留到 Phase 2。架构预留位置，但不提前支付维护成本。                              |
 | 02  | **库包 ESM-only，Tree Shaking 可证伪**          | `"type": "module"`、`"sideEffects": false`、显式 `exports` 子路径（含 `default` 条件），Node 22.23.4+ 用 `require(esm)` 兜底 CJS。CI 用 marker 测试和体积预算证明树摇，而不是口头承诺。           |
 | 03  | **tsdown + TS 7，库用 unbundle，CLI 用 bundle** | `tsdown 0.23.2` 负责 ESM 与 d.ts，`dts: { generator: 'oxc' }` + `isolatedDeclarations`；库包保留模块边界，CLI 打包并按命令懒加载。库包用 publint + attw，CLI 只做 publint（bin-only 没有 d.ts）。 |
 | 04  | **pnpm catalog + Turborepo，不启用远程缓存**    | `pnpm 12` 统一版本与构建白名单，Turbo 只负责 `build` / `typecheck` 的依赖图。两三个包阶段不引入远程缓存和额外平台，CI 超过 5 分钟再评估。                                                         |
@@ -29,17 +29,17 @@
 
 方案里的版本与能力都做了 registry / 官方文档核对；关键配置还在本机做了最小 spike。
 
-| 事项         | 核实结果                                                                                                                                                                                                                                                                | 对设计的影响                                                                                                                                                                                                                                       |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| npm 包名     | 裸名 `easy-code` 已被占用（2.0.0，2018 年后未更新，依赖 `express-session`/`gd-bmp`），`easy-code-cli` 也被占用（1.0.6）；`@shengan/easy-code-core` 与 `@shengan/easy-code-cli` 当前在 registry 未发现占用。`easy-code-cli` 还声明了 `easy-code` / `easycode` 两个 bin。 | 已定使用 `@shengan/easy-code-*`；发布前在 npm 登录态确认 `@shengan` org 可写。**绝不宣传 `npx easy-code`**，它会安装 2018 年的无关包；只写 `npx @shengan/easy-code-cli`。bin 名本地安装通常无碍，全局安装可能与旧包互相覆盖，建议评估 `ec`/`ezc`。 |
-| TypeScript   | 最新稳定版 7.0.2；Go 原生编译器，类型检查显著加速；programmatic API 预计 7.1 才稳定。                                                                                                                                                                                   | 用 TS 7 做类型检查与 d.ts；不用依赖 TS API 的 API Extractor、typescript-eslint。生态工具缺失是已知代价，不是意外。                                                                                                                                 |
-| tsdown       | 0.23.2（0.x 语义化版本），基于 Rolldown 1.2，支持 TS 7、oxc d.ts、publint、attw、treeshake。其 d.ts 插件依赖 `rolldown-plugin-dts` 0.29 beta 线。                                                                                                                       | 作为构建器，但精确锁版本；`dts` 显式指定 `generator: 'oxc'`。实测多入口会抽 shared chunk，库包因此选择 `unbundle`；`exports: true` 会重写 package.json，故手动维护 exports。dts 若被 beta 插件阻塞，临时用 TS 6.0.3 生成声明，而不是降级整个项目。 |
-| pnpm         | 最新 12.15.0（Rust 重写）；配置集中在 `pnpm-workspace.yaml`；`allowBuilds` 取代旧版 `onlyBuiltDependencies`；`minimumReleaseAge` 默认 1440 分钟；`engineStrict`/`minimumReleaseAgeStrict`/`blockExoticSubdeps`/`strictDepBuilds` 可用。                                 | 本地 pnpm 10.28.2 需要升级；`.npmrc` 只保留 auth/registry；catalog、构建白名单、供应链策略都写进 workspace 配置。CI 用 `pnpm/setup@v3`，它同时安装 pnpm 与 Node，不再依赖 Corepack。                                                               |
-| Node         | Node 26 于 2026-10-27 进入 LTS，Node 24 已转 Maintenance；Astro 7.4.2 要求 Node ≥ 22.23.4。                                                                                                                                                                             | engines 统一为 `^22.23.4`、`^24.11.0`、`^26.0.0` 三段，避免文档站加入后再次改口；CI 跑 22.23.4 / 24 / 26。                                                                                                                                         |
-| Changesets   | 3.0.3（2026-08 发布，ESM-only）；`changeset version` 在没有 changeset 时退出码为 1；`format` 支持 prettier/oxfmt 等，不支持 Biome。                                                                                                                                     | 用 `select-mode` 判断模式，避免空跑；`format: false`，由 Biome 负责格式；action 必须用 v2 与 CLI v3 配套。                                                                                                                                         |
-| npm 可信发布 | 需要 npm ≥ 11.5.1、GitHub 托管 runner、`id-token: write`、workflow 文件名精确匹配；新包首次发布需人工完成，配置后 2 天内要完成首次验证。                                                                                                                                | 发布作业单独拆出，安装 npm 11.21.1；不放 `NPM_TOKEN`，不设 `registry-url`，避免 setup-node 写入过期的 token 占位符。                                                                                                                               |
-| Biome        | 2.6.3；支持 Markdown/YAML/SCSS 格式化；`linter.domains.types` 提供类型感知规则，但不少关键规则仍在 nursery。                                                                                                                                                            | 作为 format + lint 主力；类型正确性以 `tsc --noEmit` 和测试为准，不把 nursery 规则当发布门禁。                                                                                                                                                     |
-| 文档站       | Astro 7.4.2 + Starlight 0.42（Starlight 仍是 0.x）；Astro 7 要求 Node ≥ 22.23.4。                                                                                                                                                                                       | docs 是 Phase 1 的私有 app，不阻塞 0.1.0；先 README，后站点，避免文档站反过来定义产品。                                                                                                                                                            |
+| 事项         | 核实结果                                                                                                                                                                                                                                                                      | 对设计的影响                                                                                                                                                                                                                                                |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| npm 包名     | 裸名 `easy-code` 已被占用（2.0.0，2018 年后未更新，依赖 `express-session`/`gd-bmp`），`easy-code-cli` 也被占用（1.0.6）；`@shenganlee/easy-code-core` 与 `@shenganlee/easy-code-cli` 当前在 registry 未发现占用。`easy-code-cli` 还声明了 `easy-code` / `easycode` 两个 bin。 | 已定使用 `@shenganlee/easy-code-*`；发布前在 npm 登录态确认 `@shenganlee` org 可写。**绝不宣传 `npx easy-code`**，它会安装 2018 年的无关包；只写 `npx @shenganlee/easy-code-cli`。bin 名本地安装通常无碍，全局安装可能与旧包互相覆盖，建议评估 `ec`/`ezc`。 |
+| TypeScript   | 最新稳定版 7.0.2；Go 原生编译器，类型检查显著加速；programmatic API 预计 7.1 才稳定。                                                                                                                                                                                         | 用 TS 7 做类型检查与 d.ts；不用依赖 TS API 的 API Extractor、typescript-eslint。生态工具缺失是已知代价，不是意外。                                                                                                                                          |
+| tsdown       | 0.23.2（0.x 语义化版本），基于 Rolldown 1.2，支持 TS 7、oxc d.ts、publint、attw、treeshake。其 d.ts 插件依赖 `rolldown-plugin-dts` 0.29 beta 线。                                                                                                                             | 作为构建器，但精确锁版本；`dts` 显式指定 `generator: 'oxc'`。实测多入口会抽 shared chunk，库包因此选择 `unbundle`；`exports: true` 会重写 package.json，故手动维护 exports。dts 若被 beta 插件阻塞，临时用 TS 6.0.3 生成声明，而不是降级整个项目。          |
+| pnpm         | 最新 12.15.0（Rust 重写）；配置集中在 `pnpm-workspace.yaml`；`allowBuilds` 取代旧版 `onlyBuiltDependencies`；`minimumReleaseAge` 默认 1440 分钟；`engineStrict`/`minimumReleaseAgeStrict`/`blockExoticSubdeps`/`strictDepBuilds` 可用。                                       | 本地 pnpm 10.28.2 需要升级；`.npmrc` 只保留 auth/registry；catalog、构建白名单、供应链策略都写进 workspace 配置。CI 用 `pnpm/setup@v3`，它同时安装 pnpm 与 Node，不再依赖 Corepack。                                                                        |
+| Node         | Node 26 于 2026-10-27 进入 LTS，Node 24 已转 Maintenance；Astro 7.4.2 要求 Node ≥ 22.23.4。                                                                                                                                                                                   | engines 统一为 `^22.23.4`、`^24.11.0`、`^26.0.0` 三段，避免文档站加入后再次改口；CI 跑 22.23.4 / 24 / 26。                                                                                                                                                  |
+| Changesets   | 3.0.3（2026-08 发布，ESM-only）；`changeset version` 在没有 changeset 时退出码为 1；`format` 支持 prettier/oxfmt 等，不支持 Biome。                                                                                                                                           | 用 `select-mode` 判断模式，避免空跑；`format: false`，由 Biome 负责格式；action 必须用 v2 与 CLI v3 配套。                                                                                                                                                  |
+| npm 可信发布 | 需要 npm ≥ 11.5.1、GitHub 托管 runner、`id-token: write`、workflow 文件名精确匹配；新包首次发布需人工完成，配置后 2 天内要完成首次验证。                                                                                                                                      | 发布作业单独拆出，安装 npm 11.21.1；不放 `NPM_TOKEN`，不设 `registry-url`，避免 setup-node 写入过期的 token 占位符。                                                                                                                                        |
+| Biome        | 2.6.3；支持 Markdown/YAML/SCSS 格式化；`linter.domains.types` 提供类型感知规则，但不少关键规则仍在 nursery。                                                                                                                                                                  | 作为 format + lint 主力；类型正确性以 `tsc --noEmit` 和测试为准，不把 nursery 规则当发布门禁。                                                                                                                                                              |
+| 文档站       | Astro 7.4.2 + Starlight 0.42（Starlight 仍是 0.x）；Astro 7 要求 Node ≥ 22.23.4。                                                                                                                                                                                             | docs 是 Phase 1 的私有 app，不阻塞 0.1.0；先 README，后站点，避免文档站反过来定义产品。                                                                                                                                                                     |
 
 **已经验证/核对过的配置：** 本地 spike 覆盖 tsdown 0.23.2 的 ESM 构建、`unbundle`、d.ts、publint/attw，esbuild 对产物的树摇，pnpm 12 的 catalog / `allowBuilds` / `minimumReleaseAge` / 新增供应链设置，TS 7 的 `isolatedDeclarations` + `noEmit` 组合，以及 CLI-only 包的 attw 行为（无 d.ts 会报错，故 CLI 关闭 attw）。`pnpm/setup@v3` 的输入与版本按官方 README 核对，未在 CI 实跑。本文其余配置不是纸面推演。
 
@@ -50,7 +50,7 @@
 ### Reviewer 01 · 开源规范
 
 > “一个没有 SECURITY.md、没有可信发布链的包，不应该出现在 npm 上。”
-- **命名已收敛。** 使用 `@shengan/easy-code-*`；发布前在 npm 登录态确认 `@shengan` org 可写。**绝不宣传 `npx easy-code`**——它会安装 2018 年的无关包；只写 `npx @shengan/easy-code-cli`。
+- **命名已收敛。** 使用 `@shenganlee/easy-code-*`；发布前在 npm 登录态确认 `@shenganlee` org 可写。**绝不宣传 `npx easy-code`**——它会安装 2018 年的无关包；只写 `npx @shenganlee/easy-code-cli`。
 - **P0 只上六类文件。** README、CONTRIBUTING、CODE_OF_CONDUCT 3.0、SECURITY、Issue/PR 模板、CODEOWNERS。贡献者协议用 DCO，不上 CLA；DCO 用仓库内检查，不依赖已停摆的第三方 App。
 - **包元数据要完整。** `repository.directory`、homepage、bugs、keywords、author、files、license、engines、`publishConfig.access=public`；根 LICENSE 不会进入子包 tarball，每个包目录各放一份 LICENSE 与 README。
 - **API 稳定策略先写清楚。** 0.x 允许 minor 破坏，但 CHANGELOG 必须标 BREAKING；注意 Changesets 在 0.x 用 `major` 会直接到 1.0.0，破坏性变更应写 `minor`。1.0 后至少保留一个 minor 的 deprecation；公共 API 只认 exports map，dist 深导入不支持。
@@ -97,33 +97,33 @@
 
 ### 争议裁决
 
-| 议题              | 分歧                                              | 裁决                                           | 理由 / 回退触发                                                                                                                                                                                                                                                                          |
-| ----------------- | ------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 包数量            | 架构方要 core/kit/cli；反方要 1 个包起步。        | **采纳** v0 两个发布包：core + cli；kit 按需。 | core 的平台无关边界值得保留；kit 只有在第二个消费者出现时才值得拆。若 3 个月仍只有一个消费者，取消 kit 计划。                                                                                                                                                                            |
-| ESM-only          | 架构方坚持；反方担心 CJS 用户。                   | **采纳** ESM-only，Node 22.23.4+。             | 树摇与双包危害是硬约束；`require(esm)` 已覆盖支持范围，exports 必须带 `default`。若 CJS 相关 issue 连续出现，单包加 `require` 入口，不做全量 dual。                                                                                                                                      |
-| Node 22 下限      | 22.18（tsdown 最低） vs 22.23.4（Astro 7 要求）。 | **采纳** 22.23.4。                             | 文档站虽在 Phase 1，但提前统一可避免以后改 engines 和 CI；22.23.4 仍属 Node 22 维护线。                                                                                                                                                                                                  |
-| TypeScript 7      | “最新稳定”；反方指出生态 API 未就绪。             | **采纳** TS 7.0.2，精确锁版本。                | 避开依赖 TS API 的工具即可；tsdown 的 oxc d.ts 已验证。若 d.ts 被 oxc 插件 beta 阻塞，临时用 TS 6.0.3 生成声明，不降级整个项目。                                                                                                                                                         |
-| 版本组            | fixed 锁步 vs independent 独立。                  | **采纳** core + cli fixed 组。                 | 两包兼容性优先，fixed 减少版本矩阵；插件独立。若 core 的 patch 频繁强迫 cli 发版，或未来包节奏明显分化，改 independent + peerDependencies。                                                                                                                                              |
-| CLI schema        | zod 4 生态大 vs valibot 包体小。                  | **采纳** valibot 1.5.0。                       | 实测小 schema gzip：valibot 1.4KB，zod 4 根入口约 93KB，zod/mini 约 5.2KB。CLI 不需要 zod 生态；若未来必须用 zod，至少 `zod/mini`。                                                                                                                                                      |
-| Biome 2.6         | 格式化/lint 一体；类型感知规则仍在 nursery。      | **采纳** Biome，tsc 为准。                     | 不做 typescript-eslint（TS 7 API 缺口）；类型正确性由 tsc 和测试兜底。若 missing rule 影响真实缺陷，再评估 oxlint 类型感知模式。                                                                                                                                                         |
-| Turborepo         | 发布方推荐；反方认为两三个包不需要。              | **保留** 最小配置，无远程缓存。                | 只用来表达 build/typecheck 的依赖图；若 CI 低于 5 分钟或配置成为负担，回退 `pnpm -r`。                                                                                                                                                                                                   |
-| Changesets + OIDC | 发布方要求自动化；反方觉得单人维护太重。          | **采纳** Version PR + tag + environment。      | npm 经典 token 已退出历史，OIDC 是长期正确解；tag 触发把“发布”变成一个明确动作，`main` 合并不会误发。fixed 组用 `v*`，独立包用 `<dir>-v*`；environment 限制到 `main`、`v*` 与 `*-v*`。required reviewer 等有第二个维护者再加。若发布每月超过 30 分钟，先简化 version 脚本，不放弃 OIDC。 |
-| 文档站            | 开源规范列为 P1；反方认为过早。                   | **延后** Phase 1，不阻塞 0.1.0。               | README 先承担快速开始；docs 在第一个真实工具稳定后上线。Starlight 仍是 0.x，晚点上风险更小。                                                                                                                                                                                             |
-| 治理文件          | 规范方要最小集；反方反对形式主义。                | **采纳** 只上 P0 六类。                        | GOVERNANCE、ROADMAP、SUPPORT、Scorecard 在有外部贡献者后补；不在 0.1.0 前写。                                                                                                                                                                                                            |
-| 插件系统          | 架构方想预留协议；反方认为没有第二个工具。        | **只留类型** 不做插件包。                      | core 可以导出 `definePlugin` 类型与零副作用契约，但不做自动扫描、不做注册表、不发 `plugin-*`。第二个工具出现再实现。                                                                                                                                                                     |
-| npm 命名          | 已定 `@shengan/easy-code-*`；org 可用性待确认。   | **已拍板** scope；发布前确认 org 可写。        | `@shengan/easy-code-core` 与 `@shengan/easy-code-cli` 当前未被占用。**绝不写 `npx easy-code`**——那是 2018 年的无关包。注意 `easy-code-cli` 已声明 `easy-code` / `easycode` 两个 bin：本地安装通常无碍，全局安装可能互相覆盖，建议评估 `ec` 或 `ezc`。                                    |
-| 树摇证明          | 大家都同意要做，但对成本有分歧。                  | **必须** marker + 体积预算。                   | marker 测试几十行代码即可；体积预算先测基线再设阈值。`pnpm pack` 后安装冒烟作为 P1。                                                                                                                                                                                                     |
+| 议题              | 分歧                                               | 裁决                                           | 理由 / 回退触发                                                                                                                                                                                                                                                                          |
+| ----------------- | -------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 包数量            | 架构方要 core/kit/cli；反方要 1 个包起步。         | **采纳** v0 两个发布包：core + cli；kit 按需。 | core 的平台无关边界值得保留；kit 只有在第二个消费者出现时才值得拆。若 3 个月仍只有一个消费者，取消 kit 计划。                                                                                                                                                                            |
+| ESM-only          | 架构方坚持；反方担心 CJS 用户。                    | **采纳** ESM-only，Node 22.23.4+。             | 树摇与双包危害是硬约束；`require(esm)` 已覆盖支持范围，exports 必须带 `default`。若 CJS 相关 issue 连续出现，单包加 `require` 入口，不做全量 dual。                                                                                                                                      |
+| Node 22 下限      | 22.18（tsdown 最低） vs 22.23.4（Astro 7 要求）。  | **采纳** 22.23.4。                             | 文档站虽在 Phase 1，但提前统一可避免以后改 engines 和 CI；22.23.4 仍属 Node 22 维护线。                                                                                                                                                                                                  |
+| TypeScript 7      | “最新稳定”；反方指出生态 API 未就绪。              | **采纳** TS 7.0.2，精确锁版本。                | 避开依赖 TS API 的工具即可；tsdown 的 oxc d.ts 已验证。若 d.ts 被 oxc 插件 beta 阻塞，临时用 TS 6.0.3 生成声明，不降级整个项目。                                                                                                                                                         |
+| 版本组            | fixed 锁步 vs independent 独立。                   | **采纳** core + cli fixed 组。                 | 两包兼容性优先，fixed 减少版本矩阵；插件独立。若 core 的 patch 频繁强迫 cli 发版，或未来包节奏明显分化，改 independent + peerDependencies。                                                                                                                                              |
+| CLI schema        | zod 4 生态大 vs valibot 包体小。                   | **采纳** valibot 1.5.0。                       | 实测小 schema gzip：valibot 1.4KB，zod 4 根入口约 93KB，zod/mini 约 5.2KB。CLI 不需要 zod 生态；若未来必须用 zod，至少 `zod/mini`。                                                                                                                                                      |
+| Biome 2.6         | 格式化/lint 一体；类型感知规则仍在 nursery。       | **采纳** Biome，tsc 为准。                     | 不做 typescript-eslint（TS 7 API 缺口）；类型正确性由 tsc 和测试兜底。若 missing rule 影响真实缺陷，再评估 oxlint 类型感知模式。                                                                                                                                                         |
+| Turborepo         | 发布方推荐；反方认为两三个包不需要。               | **保留** 最小配置，无远程缓存。                | 只用来表达 build/typecheck 的依赖图；若 CI 低于 5 分钟或配置成为负担，回退 `pnpm -r`。                                                                                                                                                                                                   |
+| Changesets + OIDC | 发布方要求自动化；反方觉得单人维护太重。           | **采纳** Version PR + tag + environment。      | npm 经典 token 已退出历史，OIDC 是长期正确解；tag 触发把“发布”变成一个明确动作，`main` 合并不会误发。fixed 组用 `v*`，独立包用 `<dir>-v*`；environment 限制到 `main`、`v*` 与 `*-v*`。required reviewer 等有第二个维护者再加。若发布每月超过 30 分钟，先简化 version 脚本，不放弃 OIDC。 |
+| 文档站            | 开源规范列为 P1；反方认为过早。                    | **延后** Phase 1，不阻塞 0.1.0。               | README 先承担快速开始；docs 在第一个真实工具稳定后上线。Starlight 仍是 0.x，晚点上风险更小。                                                                                                                                                                                             |
+| 治理文件          | 规范方要最小集；反方反对形式主义。                 | **采纳** 只上 P0 六类。                        | GOVERNANCE、ROADMAP、SUPPORT、Scorecard 在有外部贡献者后补；不在 0.1.0 前写。                                                                                                                                                                                                            |
+| 插件系统          | 架构方想预留协议；反方认为没有第二个工具。         | **只留类型** 不做插件包。                      | core 可以导出 `definePlugin` 类型与零副作用契约，但不做自动扫描、不做注册表、不发 `plugin-*`。第二个工具出现再实现。                                                                                                                                                                     |
+| npm 命名          | 已定 `@shenganlee/easy-code-*`；org 可用性待确认。 | **已拍板** scope；发布前确认 org 可写。        | `@shenganlee/easy-code-core` 与 `@shenganlee/easy-code-cli` 当前未被占用。**绝不写 `npx easy-code`**——那是 2018 年的无关包。注意 `easy-code-cli` 已声明 `easy-code` / `easycode` 两个 bin：本地安装通常无碍，全局安装可能互相覆盖，建议评估 `ec` 或 `ezc`。                              |
+| 树摇证明          | 大家都同意要做，但对成本有分歧。                   | **必须** marker + 体积预算。                   | marker 测试几十行代码即可；体积预算先测基线再设阈值。`pnpm pack` 后安装冒烟作为 P1。                                                                                                                                                                                                     |
 
 ## 04 最终架构
 
 目标结构保留扩展位，但 v0 只实现最少的两个发布包。依赖方向永远向下，core 不知道 Node，也不知道 CLI。
 
 ```text
-消费层      @shengan/easy-code-cli        其他工具 / 脚本       @shengan/easy-code-plugin-* (Phase 2)
+消费层      @shenganlee/easy-code-cli        其他工具 / 脚本       @shenganlee/easy-code-plugin-* (Phase 2)
               ↓
-Node 能力层  @shengan/easy-code-kit (Phase 1)    CLI 内部模块 · fs / exec / config
+Node 能力层  @shenganlee/easy-code-kit (Phase 1)    CLI 内部模块 · fs / exec / config
               ↓
-内核层      @shengan/easy-code-core        类型 · 纯函数 · 契约 · 错误模型
+内核层      @shenganlee/easy-code-core        类型 · 纯函数 · 契约 · 错误模型
               ↓
 发布层      npm OIDC              GitHub Releases       Starlight 文档 (Phase 1)
 ```
@@ -132,14 +132,14 @@ Node 能力层  @shengan/easy-code-kit (Phase 1)    CLI 内部模块 · fs / exe
 
 ### 包职责与依赖
 
-| 包                            | v0      | 职责                                                                                 | 运行时依赖                               | 平台 / 产物              |
-| ----------------------------- | ------- | ------------------------------------------------------------------------------------ | ---------------------------------------- | ------------------------ |
-| `@shengan/easy-code-core`     | 发布    | 公共类型、纯函数、错误模型、插件/配置契约。不碰 fs、exec、env、process。             | 零                                       | neutral · ESM · unbundle |
-| `@shengan/easy-code-cli`      | 发布    | bin 入口、命令注册、配置加载与校验、日志与退出码。命令按需动态加载。                 | core、cac、unconfig、valibot、picocolors | node22 · ESM · bundle    |
-| `@shengan/easy-code-kit`      | Phase 1 | 可复用的 Node 能力：配置、进程、文件系统、包管理器探测。只有第二个消费者出现时才拆。 | core + node:*                            | node22 · ESM · unbundle  |
-| `@shengan/easy-code-plugin-*` | Phase 2 | 显式安装、显式注册的插件；peer 依赖 core，不自动扫描 node_modules。                  | core（peer）                             | node22 · ESM             |
-| `@shengan/easy-code-docs`     | Phase 1 | Astro + Starlight 文档站，私有包，不发布 npm。                                       | 无运行时依赖                             | 静态站点                 |
-| `examples/*`                  | v0      | 一个最小示例，验证“安装包 → 跑 CLI → 导入库”的真实路径。                             | workspace 包                             | 私有                     |
+| 包                               | v0      | 职责                                                                                 | 运行时依赖                               | 平台 / 产物              |
+| -------------------------------- | ------- | ------------------------------------------------------------------------------------ | ---------------------------------------- | ------------------------ |
+| `@shenganlee/easy-code-core`     | 发布    | 公共类型、纯函数、错误模型、插件/配置契约。不碰 fs、exec、env、process。             | 零                                       | neutral · ESM · unbundle |
+| `@shenganlee/easy-code-cli`      | 发布    | bin 入口、命令注册、配置加载与校验、日志与退出码。命令按需动态加载。                 | core、cac、unconfig、valibot、picocolors | node22 · ESM · bundle    |
+| `@shenganlee/easy-code-kit`      | Phase 1 | 可复用的 Node 能力：配置、进程、文件系统、包管理器探测。只有第二个消费者出现时才拆。 | core + node:*                            | node22 · ESM · unbundle  |
+| `@shenganlee/easy-code-plugin-*` | Phase 2 | 显式安装、显式注册的插件；peer 依赖 core，不自动扫描 node_modules。                  | core（peer）                             | node22 · ESM             |
+| `@shenganlee/easy-code-docs`     | Phase 1 | Astro + Starlight 文档站，私有包，不发布 npm。                                       | 无运行时依赖                             | 静态站点                 |
+| `examples/*`                     | v0      | 一个最小示例，验证“安装包 → 跑 CLI → 导入库”的真实路径。                             | workspace 包                             | 私有                     |
 
 ### 边界规则
 
@@ -184,12 +184,12 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 const cases = [
   {
     name: 'core: definePlugin only',
-    code: `import { definePlugin } from '@shengan/easy-code-core'; console.log(definePlugin)`,
+    code: `import { definePlugin } from '@shenganlee/easy-code-core'; console.log(definePlugin)`,
     forbidden: ['__EASY_CODE_LOGGER__'],
   },
   {
     name: 'core: defineConfig only',
-    code: `import { defineConfig } from '@shengan/easy-code-core'; console.log(defineConfig)`,
+    code: `import { defineConfig } from '@shenganlee/easy-code-core'; console.log(defineConfig)`,
     forbidden: ['__EASY_CODE_PLUGIN_REGISTRY__'],
   },
 ]
@@ -205,7 +205,7 @@ for (const item of cases) {
     minify: false,
     logLevel: 'silent',
     alias: {
-      '@shengan/easy-code-core': `${root}/packages/core/dist/index.js`,
+      '@shenganlee/easy-code-core': `${root}/packages/core/dist/index.js`,
     },
   })
 
@@ -283,7 +283,7 @@ strictDepBuilds: true
 
 ```json
 {
-  "name": "@shengan/easy-code-repo",
+  "name": "@shenganlee/easy-code-repo",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -365,12 +365,12 @@ strictDepBuilds: true
 ```json
 [
   {
-    "name": "@shengan/easy-code-core (full)",
+    "name": "@shenganlee/easy-code-core (full)",
     "path": "packages/core/dist/index.js",
     "limit": "10 kB"
   },
   {
-    "name": "@shengan/easy-code-core (definePlugin)",
+    "name": "@shenganlee/easy-code-core (definePlugin)",
     "path": "packages/core/dist/index.js",
     "import": "{ definePlugin }",
     "limit": "1 kB"
@@ -472,7 +472,7 @@ export default defineConfig({
 
 ```json
 {
-  "name": "@shengan/easy-code-core",
+  "name": "@shenganlee/easy-code-core",
   "version": "0.1.0",
   "description": "Platform-neutral core primitives and contracts for easy-code.",
   "keywords": ["easy-code", "developer-tools", "utilities"],
@@ -523,7 +523,7 @@ export default defineConfig({
 
 ```json
 {
-  "name": "@shengan/easy-code-cli",
+  "name": "@shenganlee/easy-code-cli",
   "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
@@ -537,7 +537,7 @@ export default defineConfig({
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@shengan/easy-code-core": "workspace:^",
+    "@shenganlee/easy-code-core": "workspace:^",
     "cac": "catalog:",
     "picocolors": "catalog:",
     "unconfig": "catalog:",
@@ -676,7 +676,7 @@ export default defineConfig({
   "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
   "changelog": ["@changesets/changelog-github", { "repo": "ShenganLee/easy-code" }],
   "commit": false,
-  "fixed": [["@shengan/easy-code-core", "@shengan/easy-code-cli"]],
+  "fixed": [["@shenganlee/easy-code-core", "@shenganlee/easy-code-cli"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
@@ -948,7 +948,7 @@ See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 
 ### 发布检查清单
 
-- **命名与 scope：** npm org 已注册；`@shengan/easy-code-core`、`@shengan/easy-code-cli` 可写；`repository.url` 精确匹配 GitHub 仓库。README/文档只写 `npx @shengan/easy-code-cli`，全仓库不得出现 `npx easy-code`。
+- **命名与 scope：** npm org 已注册；`@shenganlee/easy-code-core`、`@shenganlee/easy-code-cli` 可写；`repository.url` 精确匹配 GitHub 仓库。README/文档只写 `npx @shenganlee/easy-code-cli`，全仓库不得出现 `npx easy-code`。
 - **bin 冲突：** `easy-code-cli` 已声明 `easy-code` 与 `easycode`；本地安装通常按项目解析，全局安装可能互相覆盖。发布前决定用 `easy-code` 还是更独特的 `ec`/`ezc`。
 - **首次发布：** 每个包手动 `pnpm publish --registry=https://registry.npmjs.org/ --access public --no-git-checks` 一次；随后配置 trusted publisher；2 天内用一个新版本完成 OIDC 首次发布。
 - **tag 与版本：** fixed 组用 `v<version>`，独立包用 `<dir>-v<version>`；tag 必须等于目标包版本；fixed 组所有包版本一致；不移动或复用 tag，失败就发新 patch。完整约定见 `docs/tag-conventions.md`。
@@ -976,7 +976,7 @@ See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 - `pnpm build` 只产出 ESM + d.ts；`publint` 与 `attw --profile esm-only` 无错误。
 - marker 测试证明导入单个符号不会带入未使用模块；体积回归不超过预算 10%。
 - `pnpm pack --dry-run` 的 tarball 只含 dist、README、LICENSE、package.json；tarball 里的 package.json 不含 `workspace:` / `catalog:`。
-- `npx @shengan/easy-code-cli --version` 在干净目录成功；全仓库 `rg "npx easy-code"` 无结果。
+- `npx @shenganlee/easy-code-cli --version` 在干净目录成功；全仓库 `rg "npx easy-code"` 无结果。
 - CLI 在 macOS / Linux / Windows 上 `--help` 与主命令退出码正确；未知命令退出码 2。
 - `version.yml` 能从 changeset 创建 Version PR；合并后不自动发布。
 - 推送 `v*` tag 只发布 core+cli；推送 `<dir>-v*` tag 只发布对应独立包；两者都校验版本、构建、用 OIDC 发布未发布版本，并创建 GitHub Release；OIDC 首次发布成功；`dist.attestations` 非空；重跑不重复发布。
@@ -986,20 +986,20 @@ See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 
 这套方案的最大风险不是技术选型，而是维护成本超过产品价值。下面每条风险都绑定一个可观察的触发条件。
 
-| 风险                    | 概率 / 影响 | 缓解                                                                                                               | 触发回退                                                                                               |
-| ----------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| npm scope 注册不到      | 中 / 高     | 已定 `@shengan/easy-code-*`；写代码前在 npm 登录态确认 `@shengan` org 可写，包名当前未被占用。                     | 若 org 实际不可用，立即回到用户确认改名，避免代码写完才发现。                                          |
-| TypeScript 7 + dts beta | 中 / 中     | 避开 TS API 工具；`dts: { generator: 'oxc' }`；精确锁 7.0.2 与 tsdown 0.23.2。                                     | d.ts 被 oxc/rolldown-plugin-dts beta 阻塞超过 2 天，临时用 TS 6.0.3 生成声明，或整体回退 TS 6 兼容线。 |
-| 版本组锁步              | 中 / 低     | core + cli fixed 组，减少兼容矩阵。                                                                                | core 的 patch 频繁强迫 cli 发版，或两包节奏明显分化，改 independent + peerDependencies。               |
-| Node/Jest CJS 兼容      | 中 / 中     | 文档写清只支持 Node 22.23.4+；ESM-only + `default` 条件；禁止 TLA；提供 `npx @shengan/easy-code-cli` 的 ESM 用法。 | 同一 CJS/Jest 场景出现 3 个以上独立 issue，为对应包加 `require` 入口或 CJS 构建。                      |
-| Biome 类型规则不足      | 高 / 低     | tsc 作为类型真相；Biome 只做快速 lint/format；不把 nursery 当门禁。                                                | 出现 Biome 漏掉且测试也漏掉的真实缺陷，评估 oxlint 类型感知模式。                                      |
-| tsdown 0.x 行为变化     | 中 / 中     | 精确锁版本；升级前跑完整 `pnpm check`；publint/attw/树摇门禁。                                                     | 连续两个版本出现构建回归，评估 tsup 9 或 unbuild 3 作为临时替代。                                      |
-| ESM-only 用户反弹       | 中 / 中     | Node 22.23.4+ 的 `require(esm)` 兜底；文档写清支持范围；CJS 需求按 issue 评估。                                    | 同一 CJS 场景出现 3 个以上独立 issue，为对应包加 `require` 入口，不做全量 dual。                       |
-| pnpm 12 回归            | 低 / 中     | 锁 `packageManager`；CI 冻结锁文件；本地与 CI 同版本。                                                             | 安装或发布被阻塞，回退 pnpm 11.28.8；锁文件格式兼容，不阻塞发布。                                      |
-| OIDC 发布失败           | 中 / 高     | 发布检查清单；首次人工发布；workflow 文件名与 environment 精确匹配；npm 11.21.1。                                  | 连续两次失败，临时用维护者本机 `npm publish` 发补丁，同时修 workflow；不引入长期 token。               |
-| 单人维护倦怠            | 高 / 高     | v0 只做两个包；治理延后；发布自动化；每季度清理一次工具链。                                                        | 每月发布维护超过 30 分钟，或每周投入超过 8 小时，砍掉 docs/跨 OS/插件计划。                            |
-| 树摇回归                | 中 / 中     | marker + 体积预算 + pack 冒烟；CI 阻塞合并。                                                                       | 连续两次回归，暂停新功能，先修包边界与副作用。                                                         |
-| 供应链攻击              | 低 / 高     | `minimumReleaseAge`、`trustPolicy`、冻结锁文件、Renovate、CodeQL、dependency-review、OIDC provenance。             | 发现可疑版本，立即 pin 回旧版并审计 lockfile；必要时发布安全公告。                                     |
+| 风险                    | 概率 / 影响 | 缓解                                                                                                                  | 触发回退                                                                                               |
+| ----------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| npm scope 注册不到      | 中 / 高     | 已定 `@shenganlee/easy-code-*`；写代码前在 npm 登录态确认 `@shenganlee` org 可写，包名当前未被占用。                  | 若 org 实际不可用，立即回到用户确认改名，避免代码写完才发现。                                          |
+| TypeScript 7 + dts beta | 中 / 中     | 避开 TS API 工具；`dts: { generator: 'oxc' }`；精确锁 7.0.2 与 tsdown 0.23.2。                                        | d.ts 被 oxc/rolldown-plugin-dts beta 阻塞超过 2 天，临时用 TS 6.0.3 生成声明，或整体回退 TS 6 兼容线。 |
+| 版本组锁步              | 中 / 低     | core + cli fixed 组，减少兼容矩阵。                                                                                   | core 的 patch 频繁强迫 cli 发版，或两包节奏明显分化，改 independent + peerDependencies。               |
+| Node/Jest CJS 兼容      | 中 / 中     | 文档写清只支持 Node 22.23.4+；ESM-only + `default` 条件；禁止 TLA；提供 `npx @shenganlee/easy-code-cli` 的 ESM 用法。 | 同一 CJS/Jest 场景出现 3 个以上独立 issue，为对应包加 `require` 入口或 CJS 构建。                      |
+| Biome 类型规则不足      | 高 / 低     | tsc 作为类型真相；Biome 只做快速 lint/format；不把 nursery 当门禁。                                                   | 出现 Biome 漏掉且测试也漏掉的真实缺陷，评估 oxlint 类型感知模式。                                      |
+| tsdown 0.x 行为变化     | 中 / 中     | 精确锁版本；升级前跑完整 `pnpm check`；publint/attw/树摇门禁。                                                        | 连续两个版本出现构建回归，评估 tsup 9 或 unbuild 3 作为临时替代。                                      |
+| ESM-only 用户反弹       | 中 / 中     | Node 22.23.4+ 的 `require(esm)` 兜底；文档写清支持范围；CJS 需求按 issue 评估。                                       | 同一 CJS 场景出现 3 个以上独立 issue，为对应包加 `require` 入口，不做全量 dual。                       |
+| pnpm 12 回归            | 低 / 中     | 锁 `packageManager`；CI 冻结锁文件；本地与 CI 同版本。                                                                | 安装或发布被阻塞，回退 pnpm 11.28.8；锁文件格式兼容，不阻塞发布。                                      |
+| OIDC 发布失败           | 中 / 高     | 发布检查清单；首次人工发布；workflow 文件名与 environment 精确匹配；npm 11.21.1。                                     | 连续两次失败，临时用维护者本机 `npm publish` 发补丁，同时修 workflow；不引入长期 token。               |
+| 单人维护倦怠            | 高 / 高     | v0 只做两个包；治理延后；发布自动化；每季度清理一次工具链。                                                           | 每月发布维护超过 30 分钟，或每周投入超过 8 小时，砍掉 docs/跨 OS/插件计划。                            |
+| 树摇回归                | 中 / 中     | marker + 体积预算 + pack 冒烟；CI 阻塞合并。                                                                          | 连续两次回归，暂停新功能，先修包边界与副作用。                                                         |
+| 供应链攻击              | 低 / 高     | `minimumReleaseAge`、`trustPolicy`、冻结锁文件、Renovate、CodeQL、dependency-review、OIDC provenance。                | 发现可疑版本，立即 pin 回旧版并审计 lockfile；必要时发布安全公告。                                     |
 
 **Kill criteria：** 4 周内没有一条用户可用的 CLI 命令；6 个月没有外部用户；发布流程每月超过 30 分钟或超过 2 个手动步骤；Version PR 连续两次卡住超过 1 周；连续两次发布失败；树摇回归两次；一季度两次工具链升级各耗超过 1 天；两包被迫锁步发版；维护时间每周超过 8 小时。出现任意两条，就回到“一个 CLI + 一个 core（内部目录）”的最小形态，删掉所有不影响发布的基础设施。
 

@@ -32,7 +32,7 @@ We do not run a paid bug bounty.
 
 ## Scope
 
-In scope: the published `@shengan/easy-code-*` packages, their build/publish configuration, and the CLI's handling of configuration files and child processes.
+In scope: the published `@shenganlee/easy-code-*` packages, their build/publish configuration, and the CLI's handling of configuration files and child processes.
 
 Out of scope: vulnerabilities in third-party dependencies that are already publicly disclosed and fixed upstream; reports requiring a compromised maintainer account; social engineering.
 

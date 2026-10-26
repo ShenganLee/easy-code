@@ -1,11 +1,11 @@
 [
   {
-    "name": "@shengan/easy-code-core (full)",
+    "name": "@shenganlee/easy-code-core (full)",
     "path": "packages/core/dist/index.js",
     "limit": "10 kB"
   },
   {
-    "name": "@shengan/easy-code-core (definePlugin)",
+    "name": "@shenganlee/easy-code-core (definePlugin)",
     "path": "packages/core/dist/index.js",
     "import": "{ definePlugin }",
     "limit": "1.5 kB"

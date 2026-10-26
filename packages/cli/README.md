@@ -1,13 +1,13 @@
-# @shengan/easy-code-cli
+# @shenganlee/easy-code-cli
 
 The easy-code command-line interface.
 
 ```bash
 # one-off
-npx @shengan/easy-code-cli doctor
+npx @shenganlee/easy-code-cli doctor
 
 # project-local
-pnpm add -D @shengan/easy-code-cli
+pnpm add -D @shenganlee/easy-code-cli
 pnpm exec easy-code doctor
 ```
 
@@ -30,7 +30,7 @@ easy-code doctor --cwd ./packages/my-tool
 The CLI looks for `easy-code.config.ts`, `.mts`, `.cts`, `.js`, `.mjs`, `.cjs`, or `.json` in the working directory.
 
 ```ts
-import { defineConfig } from '@shengan/easy-code-core'
+import { defineConfig } from '@shenganlee/easy-code-core'
 
 export default defineConfig({
   plugins: [],

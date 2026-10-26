@@ -4,19 +4,19 @@ Release tags drive `.github/workflows/release.yml`. The tag both selects the pac
 
 ## Two release groups
 
-| Group               | Packages                                            | Tag format         | Publishes                                    |
-| ------------------- | --------------------------------------------------- | ------------------ | -------------------------------------------- |
-| Fixed core group    | `@shengan/easy-code-core`, `@shengan/easy-code-cli` | `v<version>`       | Both packages, in fixed order: core then cli |
-| Independent package | `@shengan/easy-code-<dir>`                          | `<dir>-v<version>` | Only `packages/<dir>`                        |
+| Group               | Packages                                                  | Tag format         | Publishes                                    |
+| ------------------- | --------------------------------------------------------- | ------------------ | -------------------------------------------- |
+| Fixed core group    | `@shenganlee/easy-code-core`, `@shenganlee/easy-code-cli` | `v<version>`       | Both packages, in fixed order: core then cli |
+| Independent package | `@shenganlee/easy-code-<dir>`                             | `<dir>-v<version>` | Only `packages/<dir>`                        |
 
 The independent form maps the tag prefix to the directory under `packages/`:
 
 ```text
-kit-v0.3.0              → packages/kit              → @shengan/easy-code-kit@0.3.0
-plugin-foo-v0.1.0       → packages/plugin-foo       → @shengan/easy-code-plugin-foo@0.1.0
+kit-v0.3.0              → packages/kit              → @shenganlee/easy-code-kit@0.3.0
+plugin-foo-v0.1.0       → packages/plugin-foo       → @shenganlee/easy-code-plugin-foo@0.1.0
 ```
 
-Package directories and names must follow the convention `packages/<dir>` and `@shengan/easy-code-<dir>`.
+Package directories and names must follow the convention `packages/<dir>` and `@shenganlee/easy-code-<dir>`.
 
 ## Examples
 
@@ -65,7 +65,7 @@ A version containing `-` is published with the `next` dist-tag and marked as a p
 
 The fixed group is a deliberate compatibility choice. To release core or cli alone:
 
-1. Remove `["@shengan/easy-code-core", "@shengan/easy-code-cli"]` from `fixed` in `.changeset/config.json`.
+1. Remove `["@shenganlee/easy-code-core", "@shenganlee/easy-code-cli"]` from `fixed` in `.changeset/config.json`.
 2. Remove the `core`/`cli` guard in the `Resolve release target` step of `release.yml`.
 3. Use `core-v<version>` and `cli-v<version>` tags.
 4. Manage compatibility with `workspace:^` / peer ranges and accept the version matrix.

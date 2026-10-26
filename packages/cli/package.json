@@ -1,5 +1,5 @@
 {
-  "name": "@shengan/easy-code-cli",
+  "name": "@shenganlee/easy-code-cli",
   "version": "0.1.0",
   "description": "The easy-code command-line interface.",
   "keywords": [
@@ -40,7 +40,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@shengan/easy-code-core": "workspace:^",
+    "@shenganlee/easy-code-core": "workspace:^",
     "cac": "catalog:",
     "picocolors": "catalog:",
     "unconfig": "catalog:",

@@ -1,4 +1,4 @@
-import type { EasyCodeConfig } from '@shengan/easy-code-core'
+import type { EasyCodeConfig } from '@shenganlee/easy-code-core'
 import { loadConfig } from 'unconfig'
 import * as v from 'valibot'
 import { CliError } from './errors.js'

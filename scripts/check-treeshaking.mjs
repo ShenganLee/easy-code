@@ -6,17 +6,17 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 const cases = [
   {
     name: 'core: definePlugin only',
-    code: `import { definePlugin } from '@shengan/easy-code-core'; console.log(definePlugin)`,
+    code: `import { definePlugin } from '@shenganlee/easy-code-core'; console.log(definePlugin)`,
     forbidden: ['createLogger', 'createPluginRegistry'],
   },
   {
     name: 'core: defineConfig only',
-    code: `import { defineConfig } from '@shengan/easy-code-core'; console.log(defineConfig)`,
+    code: `import { defineConfig } from '@shenganlee/easy-code-core'; console.log(defineConfig)`,
     forbidden: ['createLogger', 'createPluginRegistry'],
   },
   {
     name: 'core: createLogger only',
-    code: `import { createLogger } from '@shengan/easy-code-core'; console.log(createLogger)`,
+    code: `import { createLogger } from '@shenganlee/easy-code-core'; console.log(createLogger)`,
     forbidden: ['createPluginRegistry'],
   },
 ]
@@ -32,7 +32,7 @@ for (const item of cases) {
     minify: false,
     logLevel: 'silent',
     alias: {
-      '@shengan/easy-code-core': `${root}/packages/core/dist/index.js`,
+      '@shenganlee/easy-code-core': `${root}/packages/core/dist/index.js`,
     },
   })
 

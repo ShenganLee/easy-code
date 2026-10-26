@@ -1,4 +1,4 @@
-# @shengan/easy-code-core
+# @shenganlee/easy-code-core
 
 Platform-neutral core primitives and contracts for easy-code.
 
@@ -7,10 +7,10 @@ Platform-neutral core primitives and contracts for easy-code.
 - No Node.js APIs: `fs`, `process`, `Buffer`, and `child_process` belong in the CLI or a future Node package.
 
 ```ts
-import { defineConfig, definePlugin, createPluginRegistry } from '@shengan/easy-code-core'
+import { defineConfig, definePlugin, createPluginRegistry } from '@shenganlee/easy-code-core'
 
 export default defineConfig({
-  plugins: ['@shengan/easy-code-plugin-example'],
+  plugins: ['@shenganlee/easy-code-plugin-example'],
   logLevel: 'info',
 })
 

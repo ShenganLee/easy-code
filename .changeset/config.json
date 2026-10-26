@@ -5,7 +5,7 @@
     { "repo": "ShenganLee/easy-code" }
   ],
   "commit": false,
-  "fixed": [["@shengan/easy-code-core", "@shengan/easy-code-cli"]],
+  "fixed": [["@shenganlee/easy-code-core", "@shenganlee/easy-code-cli"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",

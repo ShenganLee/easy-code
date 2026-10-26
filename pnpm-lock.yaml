@@ -280,7 +280,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@shengan/easy-code-core':
+      '@shenganlee/easy-code-core':
         specifier: workspace:^
         version: link:../core
       cac:

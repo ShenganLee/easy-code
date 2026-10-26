@@ -6,21 +6,21 @@ An open-source TypeScript toolkit for developer productivity.
 
 ## Packages
 
-| Package                                    | Description                                                                                                |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| [`@shengan/easy-code-core`](packages/core) | Platform-neutral types, pure helpers, error model, and plugin/config contracts. Zero runtime dependencies. |
-| [`@shengan/easy-code-cli`](packages/cli)   | The `easy-code` command-line interface.                                                                    |
+| Package                                       | Description                                                                                                |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| [`@shenganlee/easy-code-core`](packages/core) | Platform-neutral types, pure helpers, error model, and plugin/config contracts. Zero runtime dependencies. |
+| [`@shenganlee/easy-code-cli`](packages/cli)   | The `easy-code` command-line interface.                                                                    |
 
-Planned but not published yet: `@shengan/easy-code-kit` (Node APIs) and `@shengan/easy-code-plugin-*`.
+Planned but not published yet: `@shenganlee/easy-code-kit` (Node APIs) and `@shenganlee/easy-code-plugin-*`.
 
 ## Quick start
 
 ```bash
 # one-off
-npx @shengan/easy-code-cli doctor
+npx @shenganlee/easy-code-cli doctor
 
 # project-local
-pnpm add -D @shengan/easy-code-cli
+pnpm add -D @shenganlee/easy-code-cli
 pnpm exec easy-code doctor
 ```
 
@@ -29,10 +29,10 @@ Do **not** run `npx easy-code`: that name belongs to an unrelated package publis
 Library usage:
 
 ```ts
-import { defineConfig, definePlugin, createPluginRegistry } from '@shengan/easy-code-core'
+import { defineConfig, definePlugin, createPluginRegistry } from '@shenganlee/easy-code-core'
 
 export default defineConfig({
-  plugins: ['@shengan/easy-code-plugin-example'],
+  plugins: ['@shenganlee/easy-code-plugin-example'],
   logLevel: 'info',
 })
 
@@ -64,7 +64,7 @@ npm whoami --registry=https://registry.npmjs.org/
 `npm login` writes credentials to your user-level `~/.npmrc`. If your global registry is a mirror, add the scoped registry there too, never in the repository:
 
 ```ini
-@shengan:registry=https://registry.npmjs.org/
+@shenganlee:registry=https://registry.npmjs.org/
 ```
 
 Never commit tokens. CI publishing uses npm trusted publishing (OIDC) and does not need `NPM_TOKEN`.
@@ -88,7 +88,7 @@ Useful commands:
 
 ## Tree shaking
 
-`@shengan/easy-code-core` is ESM-only with `sideEffects: false` and explicit subpath exports. CI proves the claim with a consumer marker test, `publint`, `attw`, and a size budget. See [DESIGN.md](DESIGN.md) for the full contract.
+`@shenganlee/easy-code-core` is ESM-only with `sideEffects: false` and explicit subpath exports. CI proves the claim with a consumer marker test, `publint`, `attw`, and a size budget. See [DESIGN.md](DESIGN.md) for the full contract.
 
 ## Contributing
 
