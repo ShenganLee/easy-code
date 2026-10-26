@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose a new capability or improvement
+title: "feat: "
+labels: ["enhancement", "needs triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which package?
+      options: ["@shengan/easy-code-core", "@shengan/easy-code-cli", "Not sure"]
+    validations:
+      required: true

@@ -1,0 +1,46 @@
+{
+  "name": "@shengan/easy-code-repo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": "^22.23.4 || ^24.11.0 || ^26.0.0",
+    "pnpm": ">=12.15.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "vitest run --coverage",
+    "test:types": "vitest --typecheck --passWithNoTests",
+    "check": "pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm test:types && pnpm check:treeshake && pnpm check:size && pnpm check:pack",
+    "check:treeshake": "node scripts/check-treeshaking.mjs",
+    "check:size": "size-limit",
+    "check:pack": "pnpm -r --filter './packages/*' pack --dry-run",
+    "changeset": "changeset",
+    "release:version": "changeset version && pnpm install --lockfile-only",
+    "release:publish": "changeset publish"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "@biomejs/biome": "catalog:",
+    "@changesets/changelog-github": "catalog:",
+    "@changesets/cli": "catalog:",
+    "@size-limit/preset-small-lib": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "esbuild": "catalog:",
+    "execa": "catalog:",
+    "publint": "catalog:",
+    "size-limit": "catalog:",
+    "tsdown": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

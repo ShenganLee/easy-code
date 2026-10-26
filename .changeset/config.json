@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
+  "changelog": [
+    "@changesets/changelog-github",
+    { "repo": "ShenganLee/easy-code" }
+  ],
+  "commit": false,
+  "fixed": [["@shengan/easy-code-core", "@shengan/easy-code-cli"]],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "privatePackages": { "version": false, "tag": false },
+  "format": false,
+  "bumpVersionsWithWorkspaceProtocolOnly": true
+}

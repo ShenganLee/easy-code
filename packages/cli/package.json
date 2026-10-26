@@ -1,0 +1,56 @@
+{
+  "name": "@shengan/easy-code-cli",
+  "version": "0.1.0",
+  "description": "The easy-code command-line interface.",
+  "keywords": [
+    "easy-code",
+    "cli",
+    "developer-tools"
+  ],
+  "homepage": "https://github.com/ShenganLee/easy-code/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/ShenganLee/easy-code/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShenganLee/easy-code.git",
+    "directory": "packages/cli"
+  },
+  "license": "MIT",
+  "author": "Shengan Lee",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": "^22.23.4 || ^24.11.0 || ^26.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "easy-code": "./dist/cli.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@shengan/easy-code-core": "workspace:^",
+    "cac": "catalog:",
+    "picocolors": "catalog:",
+    "unconfig": "catalog:",
+    "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "@types/node": "catalog:",
+    "publint": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  }
+}

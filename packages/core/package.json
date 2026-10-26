@@ -1,0 +1,62 @@
+{
+  "name": "@shengan/easy-code-core",
+  "version": "0.1.0",
+  "description": "Platform-neutral core primitives and contracts for easy-code.",
+  "keywords": [
+    "easy-code",
+    "developer-tools",
+    "utilities"
+  ],
+  "homepage": "https://github.com/ShenganLee/easy-code/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/ShenganLee/easy-code/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShenganLee/easy-code.git",
+    "directory": "packages/core"
+  },
+  "license": "MIT",
+  "author": "Shengan Lee",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": "^22.23.4 || ^24.11.0 || ^26.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "import": "./dist/plugin.js",
+      "default": "./dist/plugin.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "@types/node": "catalog:",
+    "publint": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

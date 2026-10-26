@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "*-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-release
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/setup@v3
+        with:
+          runtime: node@24
+          cache: false
+          install: false
+      - run: npm install -g npm@11.21.1
+      - run: pnpm install --frozen-lockfile
+      - name: Resolve release target
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+
+          if [[ "$tag" =~ ^v(.+)$ ]]; then
+            version="${BASH_REMATCH[1]}"
+            targets="packages/core packages/cli"
+            group="fixed"
+          elif [[ "$tag" =~ ^(.+)-v(.+)$ ]]; then
+            name="${BASH_REMATCH[1]}"
+            version="${BASH_REMATCH[2]}"
+            if [[ "$name" == "core" || "$name" == "cli" ]]; then
+              echo "::error::core and cli are a fixed group; use a v<version> tag, or remove the fixed group first."
+              exit 1
+            fi
+            targets="packages/${name}"
+            group="${name}"
+          else
+            echo "::error::Unsupported tag format: ${tag}"
+            exit 1
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "targets=${targets}" >> "$GITHUB_OUTPUT"
+          echo "group=${group}" >> "$GITHUB_OUTPUT"
+      - name: Verify tag matches target package versions
+        shell: bash
+        env:
+          VERSION: ${{ steps.target.outputs.version }}
+          TARGETS: ${{ steps.target.outputs.targets }}
+        run: |
+          set -euo pipefail
+          for pkg in $TARGETS; do
+            if [ ! -f "${pkg}/package.json" ]; then
+              echo "::error::Missing package directory: ${pkg}"
+              exit 1
+            fi
+            actual="$(node -p "require('./${pkg}/package.json').version")"
+            if [ "$actual" != "$VERSION" ]; then
+              echo "::error::${pkg} version ${actual} does not match tag ${GITHUB_REF_NAME}"
+              exit 1
+            fi
+          done
+      - run: pnpm build
+      - run: pnpm test
+      - run: pnpm check:treeshake
+      - run: pnpm check:size
+      - name: Publish unpublished versions
+        shell: bash
+        env:
+          VERSION: ${{ steps.target.outputs.version }}
+          TARGETS: ${{ steps.target.outputs.targets }}
+        run: |
+          set -euo pipefail
+          dist_tag="latest"
+          if [[ "$VERSION" == *-* ]]; then
+            dist_tag="next"
+          fi
+          for pkg in $TARGETS; do
+            name="$(node -p "require('./${pkg}/package.json').name")"
+            if npm view "${name}@${VERSION}" version --registry=https://registry.npmjs.org/ >/dev/null 2>&1; then
+              echo "skip ${name}@${VERSION}: already published"
+              continue
+            fi
+            pnpm --filter "${name}" publish \
+              --registry=https://registry.npmjs.org/ \
+              --tag "${dist_tag}" \
+              --access public \
+              --no-git-checks \
+              --provenance
+          done
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.target.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            echo "GitHub release ${GITHUB_REF_NAME} already exists"
+          else
+            prerelease_flag=""
+            if [[ "$VERSION" == *-* ]]; then
+              prerelease_flag="--prerelease"
+            fi
+            gh release create "${GITHUB_REF_NAME}" \
+              --verify-tag \
+              --generate-notes \
+              --title "${GITHUB_REF_NAME}" \
+              ${prerelease_flag}
+          fi
