@@ -1,15 +1,19 @@
+import { readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { execa } from 'execa'
 import { describe, expect, it } from 'vitest'
 
 const cliPath = fileURLToPath(new URL('../../packages/cli/dist/cli.js', import.meta.url))
+const cliManifest = JSON.parse(
+  readFileSync(new URL('../../packages/cli/package.json', import.meta.url), 'utf8'),
+) as { version: string }
 
 describe('easy-code cli', () => {
   it('prints the version', async () => {
     const result = await execa('node', [cliPath, '--version'])
 
-    expect(result.stdout).toContain('0.1.0')
+    expect(result.stdout).toContain(cliManifest.version)
   })
 
   it('prints help with the doctor command', async () => {
