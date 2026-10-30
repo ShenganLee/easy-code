@@ -5,7 +5,7 @@ Releases use Changesets v3 for versioning and changelogs, and npm trusted publis
 Tag forms:
 
 - `v<version>` publishes the fixed core group: `@shenganlee/easy-code-core` and `@shenganlee/easy-code-cli`.
-- `<dir>-v<version>` publishes only `packages/<dir>`, for example `kit-v0.3.0` or `plugin-foo-v0.1.0`.
+- `<dir>-v<version>` publishes only `packages/<dir>`, for example `enum-v0.1.0`, `kit-v0.3.0`, or `plugin-foo-v0.1.0`.
 
 See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 
@@ -14,6 +14,7 @@ See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 1. Confirm the npm org `@shenganlee` is writable and the package names are available:
    - `@shenganlee/easy-code-core`
    - `@shenganlee/easy-code-cli`
+   - `@shenganlee/easy-code-enum`
 2. Log in locally. No project `.npmrc` is committed; `npm login` writes the account token to `~/.npmrc`. If your global registry is a mirror, also set the scoped registry in `~/.npmrc`:
 
    ```bash
@@ -39,6 +40,15 @@ See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
    pnpm install --frozen-lockfile
    pnpm build
    pnpm -r --filter './packages/*' publish \
+     --registry=https://registry.npmjs.org/ \
+     --access public \
+     --no-git-checks
+   ```
+
+   For a new independent package, publish only that package, for example:
+
+   ```bash
+   pnpm --filter @shenganlee/easy-code-enum publish \
      --registry=https://registry.npmjs.org/ \
      --access public \
      --no-git-checks
@@ -78,11 +88,11 @@ See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 For an independent package, use its directory name as the tag prefix:
 
 ```bash
-git tag -a plugin-foo-v0.1.0 -m "plugin-foo v0.1.0"
-git push origin plugin-foo-v0.1.0
+git tag -a enum-v0.1.0 -m "enum v0.1.0"
+git push origin enum-v0.1.0
 ```
 
-This publishes only `packages/plugin-foo`. Core and cli are not touched. If the plugin depends on a new core version, publish core+cli first with a `v*` tag; otherwise the plugin's published core range may point at an unpublished version. A new package must first be published manually and have its own trusted publisher configured; see the one-time setup above.
+This publishes only `packages/enum`. Core and cli are not touched. The same form works for `packages/plugin-foo` with `plugin-foo-v<version>`. If the plugin depends on a new core version, publish core+cli first with a `v*` tag; otherwise the plugin's published core range may point at an unpublished version. A new package must first be published manually and have its own trusted publisher configured; see the one-time setup above.
 
 If the tag does not match the target package version, the workflow fails before publishing. Do not move or reuse a tag; create a new patch version instead.
 

@@ -1,6 +1,6 @@
 # easy-code 架构评审
 
-> 状态：Phase 0 已落地（core + cli + CI/release）
+> 状态：Phase 0 已落地（core + cli + enum + CI/release）
 >
 > 日期：2026-10-26
 >
@@ -14,14 +14,14 @@
 
 不是把 2026 年最流行的工具全部装上，而是先定义不可退让的契约，再为每个选择留下回退路径。
 
-| #   | 决策                                            | 说明                                                                                                                                                                                              |
-| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 01  | **先发两个包，不做五包骨架**                    | v0 只发布 `@shenganlee/easy-code-core` 与 `@shenganlee/easy-code-cli`。`kit` 在第二个消费者出现时再拆，`plugin-*` 留到 Phase 2。架构预留位置，但不提前支付维护成本。                              |
-| 02  | **库包 ESM-only，Tree Shaking 可证伪**          | `"type": "module"`、`"sideEffects": false`、显式 `exports` 子路径（含 `default` 条件），Node 22.23.4+ 用 `require(esm)` 兜底 CJS。CI 用 marker 测试和体积预算证明树摇，而不是口头承诺。           |
-| 03  | **tsdown + TS 7，库用 unbundle，CLI 用 bundle** | `tsdown 0.23.2` 负责 ESM 与 d.ts，`dts: { generator: 'oxc' }` + `isolatedDeclarations`；库包保留模块边界，CLI 打包并按命令懒加载。库包用 publint + attw，CLI 只做 publint（bin-only 没有 d.ts）。 |
-| 04  | **pnpm catalog + Turborepo，不启用远程缓存**    | `pnpm 12` 统一版本与构建白名单，Turbo 只负责 `build` / `typecheck` 的依赖图。两三个包阶段不引入远程缓存和额外平台，CI 超过 5 分钟再评估。                                                         |
-| 05  | **Version PR + tag 触发发布**                   | `main` 只跑 Version PR；`v*` tag 发 core+cli 固定组，`<dir>-v*` tag 只发对应独立包。`id-token: write` 只给 tag 发布作业，发布作业挂 `npm-release` environment；全程不出现 `NPM_TOKEN`。           |
-| 06  | **治理只上 P0，文档站延后**                     | 先写 README、CONTRIBUTING、CODE_OF_CONDUCT 3.0、SECURITY、Issue/PR 模板与 CODEOWNERS。GOVERNANCE、ROADMAP、双语文档站、Scorecard 等在有外部贡献者之后再补。                                       |
+| #   | 决策                                            | 说明                                                                                                                                                                                                        |
+| --- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 01  | **先发少数包，不做五包骨架**                    | v0 先发布 `@shenganlee/easy-code-core` 与 `@shenganlee/easy-code-cli`；`enum` 作为首个独立库包按同一契约加入。`kit` 在第二个消费者出现时再拆，`plugin-*` 留到 Phase 2。架构预留位置，但不提前支付维护成本。 |
+| 02  | **库包 ESM-only，Tree Shaking 可证伪**          | `"type": "module"`、`"sideEffects": false`、显式 `exports` 子路径（含 `default` 条件），Node 22.23.4+ 用 `require(esm)` 兜底 CJS。CI 用 marker 测试和体积预算证明树摇，而不是口头承诺。                     |
+| 03  | **tsdown + TS 7，库用 unbundle，CLI 用 bundle** | `tsdown 0.23.2` 负责 ESM 与 d.ts，`dts: { generator: 'oxc' }` + `isolatedDeclarations`；库包保留模块边界，CLI 打包并按命令懒加载。库包用 publint + attw，CLI 只做 publint（bin-only 没有 d.ts）。           |
+| 04  | **pnpm catalog + Turborepo，不启用远程缓存**    | `pnpm 12` 统一版本与构建白名单，Turbo 只负责 `build` / `typecheck` 的依赖图。两三个包阶段不引入远程缓存和额外平台，CI 超过 5 分钟再评估。                                                                   |
+| 05  | **Version PR + tag 触发发布**                   | `main` 只跑 Version PR；`v*` tag 发 core+cli 固定组，`<dir>-v*` tag 只发对应独立包。`id-token: write` 只给 tag 发布作业，发布作业挂 `npm-release` environment；全程不出现 `NPM_TOKEN`。                     |
+| 06  | **治理只上 P0，文档站延后**                     | 先写 README、CONTRIBUTING、CODE_OF_CONDUCT 3.0、SECURITY、Issue/PR 模板与 CODEOWNERS。GOVERNANCE、ROADMAP、双语文档站、Scorecard 等在有外部贡献者之后再补。                                                 |
 
 **一句话原则：** 把 Tree Shaking 变成 CI 可证伪的契约，把发布变成一条可重复的流水线，其余基础设施都服务于这两件事，而不是反过来。
 
@@ -116,7 +116,7 @@
 
 ## 04 最终架构
 
-目标结构保留扩展位，但 v0 只实现最少的两个发布包。依赖方向永远向下，core 不知道 Node，也不知道 CLI。
+目标结构保留扩展位。起步实现 core 与 cli 两个发布包；enum 作为首个独立库包，按同一套库契约发布。依赖方向永远向下，core 不知道 Node，也不知道 CLI。
 
 ```text
 消费层      @shenganlee/easy-code-cli        其他工具 / 脚本       @shenganlee/easy-code-plugin-* (Phase 2)
@@ -124,26 +124,28 @@
 Node 能力层  @shenganlee/easy-code-kit (Phase 1)    CLI 内部模块 · fs / exec / config
               ↓
 内核层      @shenganlee/easy-code-core        类型 · 纯函数 · 契约 · 错误模型
+工具层      @shenganlee/easy-code-enum        EasyEnum 类 · 零依赖 · 独立发布
               ↓
 发布层      npm OIDC              GitHub Releases       Starlight 文档 (Phase 1)
 ```
 
-实线为 v0 交付；虚线为明确的延后项。依赖只能向下：core 不导入 kit/cli，kit 不导入 cli，插件只 peer 依赖 core。
+实线为 v0 交付；虚线为明确的延后项。依赖只能向下：core 不导入 kit/cli，kit 不导入 cli，enum 不依赖任何内部包，插件只 peer 依赖 core。
 
 ### 包职责与依赖
 
-| 包                               | v0      | 职责                                                                                 | 运行时依赖                               | 平台 / 产物              |
-| -------------------------------- | ------- | ------------------------------------------------------------------------------------ | ---------------------------------------- | ------------------------ |
-| `@shenganlee/easy-code-core`     | 发布    | 公共类型、纯函数、错误模型、插件/配置契约。不碰 fs、exec、env、process。             | 零                                       | neutral · ESM · unbundle |
-| `@shenganlee/easy-code-cli`      | 发布    | bin 入口、命令注册、配置加载与校验、日志与退出码。命令按需动态加载。                 | core、cac、unconfig、valibot、picocolors | node22 · ESM · bundle    |
-| `@shenganlee/easy-code-kit`      | Phase 1 | 可复用的 Node 能力：配置、进程、文件系统、包管理器探测。只有第二个消费者出现时才拆。 | core + node:*                            | node22 · ESM · unbundle  |
-| `@shenganlee/easy-code-plugin-*` | Phase 2 | 显式安装、显式注册的插件；peer 依赖 core，不自动扫描 node_modules。                  | core（peer）                             | node22 · ESM             |
-| `@shenganlee/easy-code-docs`     | Phase 1 | Astro + Starlight 文档站，私有包，不发布 npm。                                       | 无运行时依赖                             | 静态站点                 |
-| `examples/*`                     | v0      | 一个最小示例，验证“安装包 → 跑 CLI → 导入库”的真实路径。                             | workspace 包                             | 私有                     |
+| 包                               | v0      | 职责                                                                                                                             | 运行时依赖                               | 平台 / 产物              |
+| -------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------ |
+| `@shenganlee/easy-code-core`     | 发布    | 公共类型、纯函数、错误模型、插件/配置契约。不碰 fs、exec、env、process。                                                         | 零                                       | neutral · ESM · unbundle |
+| `@shenganlee/easy-code-cli`      | 发布    | bin 入口、命令注册、配置加载与校验、日志与退出码。命令按需动态加载。                                                             | core、cac、unconfig、valibot、picocolors | node22 · ESM · bundle    |
+| `@shenganlee/easy-code-enum`     | 发布    | 单一 `EasyEnum` 类：包装 TypeScript 枚举与 `as const` 对象，提供 keys/values/entries/parse 等。零依赖、无 Node API、独立版本组。 | 零                                       | neutral · ESM · unbundle |
+| `@shenganlee/easy-code-kit`      | Phase 1 | 可复用的 Node 能力：配置、进程、文件系统、包管理器探测。只有第二个消费者出现时才拆。                                             | core + node:*                            | node22 · ESM · unbundle  |
+| `@shenganlee/easy-code-plugin-*` | Phase 2 | 显式安装、显式注册的插件；peer 依赖 core，不自动扫描 node_modules。                                                              | core（peer）                             | node22 · ESM             |
+| `@shenganlee/easy-code-docs`     | Phase 1 | Astro + Starlight 文档站，私有包，不发布 npm。                                                                                   | 无运行时依赖                             | 静态站点                 |
+| `examples/*`                     | v0      | 一个最小示例，验证“安装包 → 跑 CLI → 导入库”的真实路径。                                                                         | workspace 包                             | 私有                     |
 
 ### 边界规则
 
-- **core 零 Node 依赖。** 禁止 `node:*`、`process`、`Buffer`、`fs`、`child_process`；需要平台能力时通过接口注入，而不是直接调用。
+- **库包零 Node 依赖。** core 与 enum 禁止 `node:*`、`process`、`Buffer`、`fs`、`child_process`；需要平台能力时通过接口注入，而不是直接调用。
 - **cli 是薄壳。** 命令实现可以逐步下沉到 kit，但 cli 不反向被任何包依赖；cli 的 exports 只暴露必要的程序化 API，主要入口是 bin。
 - **kit 不提前存在。** 当第二个消费者需要同一段 Node 逻辑时再抽取；抽取前先复制，避免抽象税。
 - **插件显式注册。** 用户在配置里列出插件包名，CLI 动态 import 并校验；不自动扫描 node_modules，避免隐式副作用和安全风险。
@@ -219,7 +221,7 @@ for (const item of cases) {
 }
 ```
 
-**不要过度承诺：** CLI 包不宣称支持 Tree Shaking；只有库包（core，以及未来的 kit）进入 marker 与体积预算。消费者文档里写清楚：需要支持 ESM 的 bundler，`sideEffects: false` 才会生效。
+**不要过度承诺：** CLI 包不宣称支持 Tree Shaking；只有库包（core、enum，以及未来的 kit）进入 marker 与体积预算。消费者文档里写清楚：需要支持 ESM 的 bundler，`sideEffects: false` 才会生效。
 
 ## 06 配置清单
 
@@ -374,6 +376,11 @@ strictDepBuilds: true
     "path": "packages/core/dist/index.js",
     "import": "{ definePlugin }",
     "limit": "1 kB"
+  },
+  {
+    "name": "@shenganlee/easy-code-enum (EasyEnum)",
+    "path": "packages/enum/dist/index.js",
+    "limit": "3 kB"
   }
 ]
 ```
@@ -635,6 +642,18 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'enum',
+          root: './packages/enum',
+          include: ['src/**/*.test.ts'],
+          environment: 'node',
+          typecheck: {
+            enabled: true,
+            include: ['src/**/*.test-d.ts'],
+          },
+        },
+      },
+      {
+        test: {
           name: 'cli',
           root: './packages/cli',
           include: ['src/**/*.test.ts'],
@@ -655,8 +674,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      // v0 gates coverage on the library package; the CLI is covered by e2e.
-      include: ['packages/core/src/**/*.ts'],
+      // Coverage gates the library packages; the CLI is covered by e2e.
+      include: ['packages/core/src/**/*.ts', 'packages/enum/src/**/*.ts'],
       exclude: ['**/*.test.ts', '**/*.test-d.ts', '**/index.ts'],
       thresholds: {
         lines: 90,
@@ -919,6 +938,7 @@ Tag mapping:
 | Tag                 | Publishes                                      |
 | ------------------- | ---------------------------------------------- |
 | `v0.1.1`            | `packages/core` + `packages/cli` (fixed group) |
+| `enum-v0.1.0`       | `packages/enum` only                           |
 | `kit-v0.3.0`        | `packages/kit` only                            |
 | `plugin-foo-v0.1.0` | `packages/plugin-foo` only                     |
 
@@ -948,7 +968,7 @@ See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 
 ### 发布检查清单
 
-- **命名与 scope：** npm org 已注册；`@shenganlee/easy-code-core`、`@shenganlee/easy-code-cli` 可写；`repository.url` 精确匹配 GitHub 仓库。README/文档只写 `npx @shenganlee/easy-code-cli`，全仓库不得出现 `npx easy-code`。
+- **命名与 scope：** npm org 已注册；`@shenganlee/easy-code-core`、`@shenganlee/easy-code-cli`、`@shenganlee/easy-code-enum` 可写；`repository.url` 精确匹配 GitHub 仓库。README/文档只写 `npx @shenganlee/easy-code-cli`，全仓库不得出现 `npx easy-code`。
 - **bin 冲突：** `easy-code-cli` 已声明 `easy-code` 与 `easycode`；本地安装通常按项目解析，全局安装可能互相覆盖。发布前决定用 `easy-code` 还是更独特的 `ec`/`ezc`。
 - **首次发布：** 每个包手动 `pnpm publish --registry=https://registry.npmjs.org/ --access public --no-git-checks` 一次；随后配置 trusted publisher；2 天内用一个新版本完成 OIDC 首次发布。
 - **tag 与版本：** fixed 组用 `v<version>`，独立包用 `<dir>-v<version>`；tag 必须等于目标包版本；fixed 组所有包版本一致；不移动或复用 tag，失败就发新 patch。完整约定见 `docs/tag-conventions.md`。
@@ -997,7 +1017,7 @@ See [docs/tag-conventions.md](docs/tag-conventions.md) for the full rules.
 | ESM-only 用户反弹       | 中 / 中     | Node 22.23.4+ 的 `require(esm)` 兜底；文档写清支持范围；CJS 需求按 issue 评估。                                       | 同一 CJS 场景出现 3 个以上独立 issue，为对应包加 `require` 入口，不做全量 dual。                       |
 | pnpm 12 回归            | 低 / 中     | 锁 `packageManager`；CI 冻结锁文件；本地与 CI 同版本。                                                                | 安装或发布被阻塞，回退 pnpm 11.28.8；锁文件格式兼容，不阻塞发布。                                      |
 | OIDC 发布失败           | 中 / 高     | 发布检查清单；首次人工发布；workflow 文件名与 environment 精确匹配；npm 11.21.1。                                     | 连续两次失败，临时用维护者本机 `npm publish` 发补丁，同时修 workflow；不引入长期 token。               |
-| 单人维护倦怠            | 高 / 高     | v0 只做两个包；治理延后；发布自动化；每季度清理一次工具链。                                                           | 每月发布维护超过 30 分钟，或每周投入超过 8 小时，砍掉 docs/跨 OS/插件计划。                            |
+| 单人维护倦怠            | 高 / 高     | v0 保持小包数（core、enum、cli）；治理延后；发布自动化；每季度清理一次工具链。                                        | 每月发布维护超过 30 分钟，或每周投入超过 8 小时，砍掉 docs/跨 OS/插件计划。                            |
 | 树摇回归                | 中 / 中     | marker + 体积预算 + pack 冒烟；CI 阻塞合并。                                                                          | 连续两次回归，暂停新功能，先修包边界与副作用。                                                         |
 | 供应链攻击              | 低 / 高     | `minimumReleaseAge`、`trustPolicy`、冻结锁文件、Renovate、CodeQL、dependency-review、OIDC provenance。                | 发现可疑版本，立即 pin 回旧版并审计 lockfile；必要时发布安全公告。                                     |
 

@@ -19,6 +19,11 @@ const cases = [
     code: `import { createLogger } from '@shenganlee/easy-code-core'; console.log(createLogger)`,
     forbidden: ['createPluginRegistry'],
   },
+  {
+    name: 'enum: bare import is side-effect free',
+    code: `import '@shenganlee/easy-code-enum'`,
+    forbidden: ['EasyEnum'],
+  },
 ]
 
 for (const item of cases) {
@@ -33,6 +38,7 @@ for (const item of cases) {
     logLevel: 'silent',
     alias: {
       '@shenganlee/easy-code-core': `${root}/packages/core/dist/index.js`,
+      '@shenganlee/easy-code-enum': `${root}/packages/enum/dist/index.js`,
     },
   })
 

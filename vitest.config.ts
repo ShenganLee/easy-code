@@ -17,6 +17,18 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'enum',
+          root: './packages/enum',
+          include: ['src/**/*.test.ts'],
+          environment: 'node',
+          typecheck: {
+            enabled: true,
+            include: ['src/**/*.test-d.ts'],
+          },
+        },
+      },
+      {
+        test: {
           name: 'cli',
           root: './packages/cli',
           include: ['src/**/*.test.ts'],
@@ -37,9 +49,9 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      // v0 gates coverage on the library package. The CLI is exercised as a
-      // black box by the e2e project; add CLI unit coverage in Phase 1.
-      include: ['packages/core/src/**/*.ts'],
+      // Coverage gates the library packages. The CLI is exercised as a black
+      // box by the e2e project; add CLI unit coverage in Phase 1.
+      include: ['packages/core/src/**/*.ts', 'packages/enum/src/**/*.ts'],
       exclude: ['**/*.test.ts', '**/*.test-d.ts', '**/index.ts'],
       thresholds: {
         lines: 90,

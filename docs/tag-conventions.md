@@ -12,6 +12,7 @@ Release tags drive `.github/workflows/release.yml`. The tag both selects the pac
 The independent form maps the tag prefix to the directory under `packages/`:
 
 ```text
+enum-v0.1.0             → packages/enum             → @shenganlee/easy-code-enum@0.1.0
 kit-v0.3.0              → packages/kit              → @shenganlee/easy-code-kit@0.3.0
 plugin-foo-v0.1.0       → packages/plugin-foo       → @shenganlee/easy-code-plugin-foo@0.1.0
 ```
@@ -32,11 +33,11 @@ This is the only valid tag form while core and cli are in the Changesets `fixed`
 ### One independent package
 
 ```bash
-git tag -a plugin-foo-v0.1.0 -m "plugin-foo v0.1.0"
-git push origin plugin-foo-v0.1.0
+git tag -a enum-v0.1.0 -m "enum v0.1.0"
+git push origin enum-v0.1.0
 ```
 
-Only `packages/plugin-foo` is published. Core and cli are not touched.
+Only `packages/enum` is published. Core and cli are not touched. The same form applies to any other independent package, for example `plugin-foo-v0.1.0`.
 
 ### Prerelease
 
@@ -44,19 +45,19 @@ Only `packages/plugin-foo` is published. Core and cli are not touched.
 git tag -a v0.1.1-next.0 -m "v0.1.1-next.0"
 git push origin v0.1.1-next.0
 
-git tag -a plugin-foo-v0.1.0-beta.1 -m "plugin-foo v0.1.0-beta.1"
-git push origin plugin-foo-v0.1.0-beta.1
+git tag -a enum-v0.1.1-next.0 -m "enum v0.1.1-next.0"
+git push origin enum-v0.1.1-next.0
 ```
 
 A version containing `-` is published with the `next` dist-tag and marked as a prerelease on GitHub. `latest` stays on the stable line.
 
 ## Rules
 
-1. **Tag version must equal the package version.** `v0.1.1` requires every fixed-group package to be `0.1.1`; `plugin-foo-v0.1.0` requires `packages/plugin-foo/package.json` to be `0.1.0`.
+1. **Tag version must equal the package version.** `v0.1.1` requires every fixed-group package to be `0.1.1`; `enum-v0.1.0` requires `packages/enum/package.json` to be `0.1.0`.
 2. **Use annotated tags.** `git tag -a <tag> -m "<message>"`. Tags are release records, not throwaway labels.
 3. **Never move or reuse a tag.** If a release is wrong, publish a new patch version and a new tag. Do not force-push tags.
 4. **Do not use `core-v*` or `cli-v*` while the fixed group is active.** The workflow rejects them. Release core and cli together with `v*`.
-5. **Independent tags publish only their package.** A plugin that depends on a new core version still needs core published first; tags do not enforce cross-package order. Prefer `peerDependencies` on core for plugins, and publish core+cli before the plugin whenever the plugin's core range points at a new core version.
+5. **Independent tags publish only their package.** `packages/enum` has no runtime dependencies. A plugin that depends on a new core version still needs core published first; tags do not enforce cross-package order. Prefer `peerDependencies` on core for plugins, and publish core+cli before the plugin whenever the plugin's core range points at a new core version.
 6. **One Version PR can bump several packages.** Tag each release group separately. Packages that are bumped but not tagged remain unpublished; this is expected for independent releases.
 7. **A new package needs its own bootstrap.** Publish the first version manually, configure its npm trusted publisher (`release.yml`, environment `npm-release`, allow npm publish), then use tags. The first OIDC publish must be a new version within 2 days of configuring the publisher.
 8. **Version PRs are still required.** Merge the `Version` workflow's Version Packages PR before tagging the resulting commit.

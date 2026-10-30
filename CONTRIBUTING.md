@@ -35,7 +35,7 @@ pnpm check
 
 ## Package boundaries
 
-- `@shenganlee/easy-code-core` stays platform-neutral: no `node:*`, `process`, `Buffer`, `fs`, or `child_process`.
+- `@shenganlee/easy-code-core` and `@shenganlee/easy-code-enum` stay platform-neutral: no `node:*`, `process`, `Buffer`, `fs`, or `child_process`.
 - `@shenganlee/easy-code-cli` owns Node-specific behavior.
 - Public API is the package `exports` map. Do not rely on deep imports into `dist`.
 - Do not add runtime TypeScript path aliases or `#imports`; use relative imports with `.js` extensions and `workspace:^` dependencies.
@@ -43,7 +43,7 @@ pnpm check
 ## Code style
 
 - Biome formats and lints the repository. Run `pnpm lint:fix`.
-- TypeScript is strict; exported declarations must be explicit (`isolatedDeclarations`).
+- TypeScript is strict; exported declarations must be explicit (`isolatedDeclarations`). Library packages also add `*.test-d.ts` type tests.
 - Prefer small, named exports over large barrels. Avoid top-level side effects in library code.
 
 ## Release process

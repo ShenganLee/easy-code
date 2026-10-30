@@ -9,6 +9,7 @@ An open-source TypeScript toolkit for developer productivity.
 | Package                                       | Description                                                                                                |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | [`@shenganlee/easy-code-core`](packages/core) | Platform-neutral types, pure helpers, error model, and plugin/config contracts. Zero runtime dependencies. |
+| [`@shenganlee/easy-code-enum`](packages/enum) | Zero-dependency `EasyEnum` class for TypeScript enums and `as const` enum-like objects.                    |
 | [`@shenganlee/easy-code-cli`](packages/cli)   | The `easy-code` command-line interface.                                                                    |
 
 Planned but not published yet: `@shenganlee/easy-code-kit` (Node APIs) and `@shenganlee/easy-code-plugin-*`.
@@ -45,6 +46,17 @@ registry.register(
     },
   }),
 )
+```
+
+Enum helper:
+
+```ts
+import { EasyEnum } from '@shenganlee/easy-code-enum'
+
+const Role = new EasyEnum({ Admin: 'admin', User: 'user' })
+
+Role.values() // ['admin', 'user']
+Role.parse('admin') // 'Admin'
 ```
 
 ## Requirements
@@ -88,7 +100,7 @@ Useful commands:
 
 ## Tree shaking
 
-`@shenganlee/easy-code-core` is ESM-only with `sideEffects: false` and explicit subpath exports. CI proves the claim with a consumer marker test, `publint`, `attw`, and a size budget. See [DESIGN.md](DESIGN.md) for the full contract.
+The library packages (`@shenganlee/easy-code-core` and `@shenganlee/easy-code-enum`) are ESM-only with `sideEffects: false` and explicit subpath exports. CI proves the claim with consumer marker tests, `publint`, `attw`, and size budgets. See [DESIGN.md](DESIGN.md) for the full contract.
 
 ## Contributing
 
